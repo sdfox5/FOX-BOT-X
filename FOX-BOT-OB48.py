@@ -1023,5 +1023,7 @@ def run(host, port):
             t.start()
     except Exception as e:
         print(f"ERROR IN run: {e}")
-if __name__ == "__main__":
-    run("127.0.0.1", 3000)
+def start_bot():
+    proxy = Proxy()
+    proxy.run("127.0.0.1", 3000)
+start_bot()
