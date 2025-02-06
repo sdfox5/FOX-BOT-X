@@ -1024,4 +1024,4 @@ def run(host, port):
     except Exception as e:
         print(f"ERROR IN run: {e}")
 if __name__ == "__main__":
-    run("127.0.0.1", 1080)
+    run("127.0.0.1", 3000)
