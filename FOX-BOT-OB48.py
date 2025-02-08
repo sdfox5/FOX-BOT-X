@@ -71,6 +71,24 @@ def get_random_color():
     ])
     return color
 #####EDIT PACKET FOR SEND MESSAGEL#####
+def send_msg_friends(replay, packet):
+	replay  = replay.encode('utf-8')
+	replay = replay.hex()
+	hd = packet[0:8]
+	packetLength = packet[8:10]
+	paketBody = packet[10:32]
+	pyloadbodyLength = packet[32:34]
+	pyloadbody2 = packet[34:60]
+	pyloadlength = packet[60:62]
+	pyloadtext  = re.findall(r'{}(.*?)28'.format(pyloadlength) , packet[50:])[0]
+	Tipy = packet[int(int(len(pyloadtext))+62):]
+	NewTextLength = (hex((int(f'0x{pyloadlength}', 16) - int(len(pyloadtext)//2) ) + int(len(replay)//2))[2:])
+	if len(NewTextLength) ==1:
+		NewTextLength = "0"+str(NewTextLength)
+	Nepalh = hex(((int(f'0x{packetLength}', 16) - int((len(pyloadtext))//2) ) ) + int(len(replay)//2) )[2:]
+	Nepylh = hex(((int(f'0x{pyloadbodyLength}', 16) - int(len(pyloadtext)//2))  )+ int(len(replay)//2) )[2:]
+	st_pack = hd + Nepalh + paketBody + Nepylh + pyloadbody2 + NewTextLength + replay + Tipy
+	return st_pack
 def gen_squad(clisocks, packet: str):
         header = packet[0:62]
         lastpacket = packet[64:]
@@ -165,6 +183,34 @@ def send_msg(sock, packet, content, delay:int):
                 sock.send(bytes.fromhex(gen_msgv3(packet, content)))
         except Exception as e:
                 pass
+def send_msg_clan(replay, packet):
+	replay  = replay.encode('utf-8')
+	replay = replay.hex()
+	hd = packet[0:8]
+	packetLength = packet[8:10] #
+	paketBody = packet[10:32]
+	pyloadbodyLength = packet[32:34]#
+	pyloadbody2 = packet[34:64]
+	if "googleusercontent" in str(bytes.fromhex(packet)):
+		pyloadlength = packet[64:68]#
+		pyloadtext  = re.findall(r'{}(.*?)28'.format(pyloadlength) , packet[50:])[0]
+		Tipy = packet[int(int(len(pyloadtext))+68):]
+	elif "https" in str(bytes.fromhex(packet)) and "googleusercontent" not in str(bytes.fromhex(packet)):
+		pyloadlength = packet[64:68]#
+		pyloadtext  = re.findall(r'{}(.*?)28'.format(pyloadlength) , packet[50:])[0]
+		Tipy = packet[int(int(len(pyloadtext))+68):]
+		print(bytes.fromhex(pyloadlength))
+	else:
+		pyloadlength = packet[64:66]#
+		pyloadtext  = re.findall(r'{}(.*?)28'.format(pyloadlength) , packet[50:])[0]
+		Tipy = packet[int(int(len(pyloadtext))+66):]
+	NewTextLength = (hex((int(f'0x{pyloadlength}', 16) - int(len(pyloadtext)//2) ) + int(len(replay)//2))[2:])
+	if len(NewTextLength) ==1:
+		NewTextLength = "0"+str(NewTextLength)
+	NewpaketLength = hex(((int(f'0x{packetLength}', 16) - int(len(pyloadtext)//2) ) - int(len(pyloadlength))) + int(len(replay)//2) + int(len(NewTextLength)))[2:]
+	NewPyloadLength = hex(((int(f'0x{pyloadbodyLength}', 16) - int(len(pyloadtext)//2)) -int(len(pyloadlength)) )+ int(len(replay)//2) + int(len(NewTextLength)))[2:]
+	st_pack = hd + NewpaketLength +paketBody + NewPyloadLength +pyloadbody2+NewTextLength+ replay + Tipy
+	return st_pack
 def send_msg_clan(replay, packet):
 	replay  = replay.encode('utf-8')
 	replay = replay.hex()
@@ -427,14 +473,11 @@ def exchange_loop(client, remote, port):
                 if code_verified and b"/ROM-CODE" in dataS:
                     newdataS2 = dataS.hex()
                     getin = client
-                    rom = f"{get_random_color}\nROM CODE: {romcode}\n"
-                    try:
-                        threading.Thread(target=send_msg, args=(client, dataS.hex(), rom, 0.001)).start()
-                    except:
-                        print(f"[b][c][FF00FF]Error !")
+                    rom = f""
+                    client.send(bytes.fromhex(send_msg_clan(f"{get_random_color()}\nROM CODE: {romcode}\n", dataS.hex())))
 ####################################
-                elif code_verified and  b"/INFO+" in dataS:
-                             parts = dataS.split(b"/INFO+")
+                elif code_verified and  b"/CHECK+" in dataS:
+                             parts = dataS.split(b"/CHECK+")
                              user_id = parts[1].split(b"\x28")[0].decode("utf-8")
                              b = get_player_info(user_id)
                              bb = get_status(user_id)
@@ -581,10 +624,10 @@ def exchange_loop(client, remote, port):
                                 client.send(bytes.fromhex("12 00 00 00 EC 08 9A E5 93 CF 28 10 12 20 02 2A DF 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 1D 5B 32 45 43 43 37 31 5D 53 50 41 4D 20 42 41 43 4B 3A 20 2F 42 41 43 4B 2D 53 50 41 4D 28 BC 9E 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 BE DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 80 C0 9A AF 89 A4 B5 98 1A"))
                                 time.sleep(0.5)
                                 client.send(bytes.fromhex("12 00 00 00 F9 08 C5 AA 88 E6 26 10 12 20 02 2A EC 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 2A 5B 32 45 43 43 37 31 5D 53 50 41 4D 20 4D 45 53 53 41 47 45 20 46 41 4B 45 3A 2F 40 53 20 57 48 49 54 20 4D 45 53 53 41 47 45 28 9C A4 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 80 C0 9A C1 E9 FD B5 98 1A"))
-                                time.sleep(0.5)
-                                client.send(bytes.fromhex("12 00 00 00 ED 08 9A E5 93 CF 28 10 12 20 02 2A E0 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 1E 5B 32 45 43 43 37 31 5D 50 4C 41 59 45 52 20 49 4E 46 4F 3A 2F 49 4E 46 4F 2B 5B 69 64 5D 28 DE A5 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 80 C0 9A C1 C6 95 B6 98 1A"))
-                                time.sleep(0.5)
-                                client.send(bytes.fromhex("12 00 00 00 EF 08 9A E5 93 CF 28 10 12 20 02 2A E2 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 20 5B 32 45 43 43 37 31 5D 41 44 44 20 31 30 30 20 4C 49 4B 45 53 3A 4C 49 4B 45 53 2B 5B 69 64 5D 28 DB A6 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 80 C0 9A F5 DF A4 B6 98 1A"))
+#                                time.sleep(0.5)
+#                                client.send(bytes.fromhex("12 00 00 00 ED 08 9A E5 93 CF 28 10 12 20 02 2A E0 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 1E 5B 32 45 43 43 37 31 5D 50 4C 41 59 45 52 20 49 4E 46 4F 3A 2F 49 4E 46 4F 2B 5B 69 64 5D 28 DE A5 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 80 C0 9A C1 C6 95 B6 98 1A"))
+#                                time.sleep(0.5)
+#                                client.send(bytes.fromhex("12 00 00 00 EF 08 9A E5 93 CF 28 10 12 20 02 2A E2 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 20 5B 32 45 43 43 37 31 5D 41 44 44 20 31 30 30 20 4C 49 4B 45 53 3A 4C 49 4B 45 53 2B 5B 69 64 5D 28 DB A6 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 80 C0 9A F5 DF A4 B6 98 1A"))
                                 time.sleep(0.5)
                                 client.send(bytes.fromhex("12 00 00 00 EF 08 C5 AA 88 E6 26 10 12 20 02 2A E2 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 20 5B 32 45 43 43 37 31 5D 43 4F 4C 4F 52 20 59 4F 55 52 20 4D 45 53 53 41 47 45 3A 2F 53 48 4F 57 28 F6 B9 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 80 C0 9A F1 F9 D0 B8 98 1A"))
                                 time.sleep(0.5)
@@ -592,7 +635,9 @@ def exchange_loop(client, remote, port):
                                 time.sleep(0.5)
                                 client.send(bytes.fromhex("12 00 00 00 F9 08 C5 AA 88 E6 26 10 12 20 02 2A EC 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 2A 5B 32 45 43 43 37 31 5D 43 48 45 43 4B 20 42 41 4E 20 49 44 20 41 4E 44 20 52 45 47 49 4F 4E 3A 43 48 45 43 4B 2B 5B 69 64 5D 28 E6 A7 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 81 C0 9A A9 E4 B5 B6 98 1A"))
                                 time.sleep(0.5)
-                                client.send(bytes.fromhex("12 00 00 00 EF 08 9A E5 93 CF 28 10 12 20 02 2A E2 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 20 5B 32 45 43 43 37 31 5D 41 44 44 20 31 30 30 20 4C 49 4B 45 53 3A 4C 49 4B 45 53 2B 5B 69 64 5D 28 DB A6 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 80 C0 9A F5 DF A4 B6 98 1A"))
+                                client.send(bytes.fromhex("12000000ef08c5aa88e626101220022ae20108c5aa88e62610c0c5cefb18180222205b3245434337315d47455420524f4d20434f44453a202f524f4d2d434f44452228aa989abd064a310a12434f4445583ae385a4e385a4464f58e298aa10bedd8dae0320c9014212e385a4e385a4434f444558e385a4424f54535202656e6a660a6068747470733a2f2f6c68332e676f6f676c6575736572636f6e74656e742e636f6d2f612f414367386f634a446b484d6f41782d4253794755676e3671474f4d7a755077555673526e675f434a41717941644261797768317634773d7339362d63100118017200800180c09a8189b4e0991a"))
+#                                time.sleep(0.5)
+#                                client.send(bytes.fromhex("12 00 00 00 EF 08 9A E5 93 CF 28 10 12 20 02 2A E2 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 20 5B 32 45 43 43 37 31 5D 41 44 44 20 31 30 30 20 4C 49 4B 45 53 3A 4C 49 4B 45 53 2B 5B 69 64 5D 28 DB A6 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 80 C0 9A F5 DF A4 B6 98 1A"))
                                 time.sleep(0.5)
                                 client.send(bytes.fromhex("12 00 00 01 3C 08 C5 AA 88 E6 26 10 12 20 02 2A AF 02 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 6D 5B 46 46 30 30 30 30 5D E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 42 4F 54 20 4D 41 44 45 20 42 59 20 46 4F 58 20 41 4E 44 20 53 4E 4F 50 49 20 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 E3 85 A4 28 F2 D2 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 80 C0 9A E9 87 D7 BB 98 1A"))
                                 time.sleep(0.5)
@@ -647,11 +692,6 @@ def exchange_loop(client, remote, port):
                 elif code_verified and  b"/ROM-SPY" in dataS:
                     op.send(b"\x0e\x15\x00\x00\x00P\xd6\xd5\x19\x00+\xdc\xc6M\xe8\xa4,\x1a\xae\xdf\\:\xaa\xcf|\xe6\x94\xef\xbf\xc1\xf1\x1f\x02h\t\xb6%\xe7\x93aM\xd1?\xfa8\xee\xccUO\xf3 \xa6\x1b\x8a\xc6\x96\x99\xa8\xeb^\xda\xb7;9\xe9\xd9\x10zP\xd5\xe0\x83\xa2\xbc\x8c\x01\xfb\xadd\xdb\xcek\x85\x81\xcdP")
 ####################################
-                elif b"/LAG-YOU" in dataS:
-                    for i in range (99999999999999):
-                                threading.Thread(target=send_msg, args=(client, dataS.hex(), "[b][c][FBB117]- ∫   LAGGGGG NEGAAA\n\n/FUCK YOUUㅤㅤ", 1.0)).start()
-                                threading.Thread(target=send_msg, args=(client, dataS.hex(), "[b][c][FBB117]- ∫ FUCK FUCK FUCK\n\n/FUCK YOUU\n\nFUCK FUCK", 1.0)).start()
-                                time.sleep(0.01)
 ####################################
                 elif code_verified and   b"/INV" in dataS and '1200' in dataS.hex()[0:4]:
                         spamm = True
@@ -951,8 +991,7 @@ def exchange_loop(client, remote, port):
                     op.send(yout51)
 ####################################
                 if client.send(dataS) <= 0:
-                    print("Failed to send data to client.")
-                    break
+                    pass
     except Exception as e:
         print(f"ERROR IN exchange_loop: {e}")
 ####################################
@@ -980,6 +1019,7 @@ def spam_antiban(client, dataS):
 def run(host, port):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind((host, port))
         s.listen()
         print(f"Proxy running on ⟩⟩ : {host},{port}")
