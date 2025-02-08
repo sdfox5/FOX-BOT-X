@@ -11,6 +11,30 @@ import select
 import json
 import urllib3
 import struct
+website = "https://api-ghost.vercel.app/FFcrypto/{id}"
+def fake_friend(client, id: str):
+        if len(id) == 8:
+            packet = "060000007708d4d7faba1d100620022a6b08cec2f1051a1b5b3030464630305d2b2b20202020434f4445585b3030464630305d32024d454049b00101b801e807d801d4d8d0ad03e001b2dd8dae03ea011eefbca8efbca5efbcb2efbcafefbcb3efbca8efbca9efbcadefbca1efa3bf8002fd98a8dd03900201d00201"
+            packet = re.sub(r'cec2f105', id, packet)
+            client.send(bytes.fromhex(packet))
+        elif len(id) == 10:
+            packet = "060000006f08d4d7faba1d100620022a6308fb9db9ae061a1c5b3030464630305d2b2be385a4434f44455820205b3030464630305d32024d454040b00113b801e71cd801d4d8d0ad03e00191db8dae03ea010a5a45522d49534b494e47f00101f801911a8002fd98a8dd03900201d0020ad80221"
+            packet = re.sub(r'fb9db9ae06', id, packet)
+            client.send(bytes.fromhex(packet))
+        else:
+            print(id)
+def Encrypt_ID(id):
+        api_url = website.format(id=id)
+        try:
+            response = requests.get(api_url)
+            if response.status_code == 200:
+                return response.text
+            else:
+                print("&#1601;&#1588;&#1604; &#1601;&#1610; &#1580;&#1604;&#1576; &#1575;&#1604;&#1576;&#1610;&#1575;&#1606;&#1575;&#1578;. &#1585;&#1605;&#1586; &#1575;&#1604;&#1581;&#1575;&#1604;&#1577;:", response.status_code)
+                return None
+        except requests.RequestException as e:
+            print("&#1601;&#1588;&#1604; &#1575;&#1604;&#1591;&#1604;&#1576;:", e)
+            return None
 ####################################
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 ####################################
@@ -451,16 +475,16 @@ def exchange_loop(client, remote, port):
                     code_verified = True
                     client.send(bytes.fromhex("120000013908c5aa88e626101220022aac0208c5aa88e6261092c4c5ee271802226a5b63d98f5d5b62d98e5d5b3030464646465de385a4e385a4e385a4e385a4e385a4e385a4e385a4e385a4e385a4e385a4e385a4e385a4e385a4e385a4e385a4e385a4e385a44652454520434f444520332044415921212120e385a4e385a4e385a4e385a4e385a4e385a428f3eb91bd064a310a12434f4445583ae385a4e385a4464f58e298aa10bedd8dae0320c9014212e385a4e385a4434f444558e385a4424f54535202656e6a660a6068747470733a2f2f6c68332e676f6f676c6575736572636f6e74656e742e636f6d2f612f414367386f634a446b484d6f41782d4253794755676e3671474f4d7a755077555673526e675f434a41717941644261797768317634773d7339362d63100118017200800180b09ad3f4fddd981a"))
                 pack = dataS.hex()
+                
                 if "0f0000" in dataS.hex()[0:6] and "0f15" in dataC.hex()[0:4] and add_fake == True:
                 	time.sleep(5)
                 	id_add = dataS.hex()[-10:]
                 	print(id_add)
-                	op.send(bytes.fromhex(f"060000006808d4d7faba1d100620022a5c08{id_add}1a1b5b3030464630305d6624e385a46b6f756e6f7a5b3030464646465d32024d45404db00113b801a528d801d4d8d0ad03e00101b801e807f00101f8019a018002fd98a8dd03900201d0020cd8022ee002b2e9f7b103"))
+                	op.send(bytes.fromhex(f"060000006808d4d7faba1d100620022a5c08{id_add}1a1b5b4642423131375d4344582be385a4464f58585b4642423131375d32024d45404db00113b801a528d801d4d8d0ad03e00101b801e807f00101f8019a018002fd98a8dd03900201d0020cd8022ee002b2e9f7b103"))
                 if "0f0000" in dataS.hex()[0:6] and len(dataS.hex()) == 52 and "0f15" in dataC.hex()[0:4] and add_fake == True:
                    time.sleep(5)
                    id_add = dataS.hex()[-10:]
-                   print(id_add)
-                   op.send(bytes.fromhex(f"060000006808d4d7faba1d100620022a5c08{id_add}1a1b5b3030464630305d6624e385a46b6f756e6f7a5b3030464646465d32024d45404db00113b801a528d801d4d8d0ad03e00101b801e807f00101f8019a018002fd98a8dd03900201d0020cd8022ee002b2e9f7b103"))
+                   op.send(bytes.fromhex(f"060000006808d4d7faba1d100620022a5c08{id_add}1a1b5b4642423131375d4344582be385a4464f58585b4642423131375d32024d45404db00113b801a528d801d4d8d0ad03e00101b801e807f00101f8019a018002fd98a8dd03900201d0020cd8022ee002b2e9f7b103"))
                 if '0e00' in dataS.hex()[0:4]:
                     for i in range(10):
                         pattern = fr"x0{str(i)}(\d+)Z"
@@ -485,6 +509,7 @@ def exchange_loop(client, remote, port):
                                  print(bb["error"])
                              else:
                                  threading.Thread(target=send_msg, args=(client, dataS.hex(), bb, 0.2)).start()
+                                 time.sleep(1)
                                  reg = b["region"]
                                  nick = b["nickname"]
                                  threading.Thread(target=send_msg, args=(client, dataS.hex(), reg, 0.2)).start()
@@ -509,7 +534,7 @@ def exchange_loop(client, remote, port):
                 if b"@FOX-B" in dataS:
                         idd = (bytes.fromhex(re.findall(r'40464f582d42(.*?)28', pack)[0])).decode('utf-8') 
                         ress = f"[cُ][bَ][0000FF]{idd}"
-                        threading.Thread(target=send_msg, args=(client, dataS.hex(), ress, 0.2)).start() 
+                        threading.Thread(target=send_msg, args=(client, dataS.hex(), ress, 0.2)).start()
                 if b"@FOX-O" in dataS:
                         idd = (bytes.fromhex(re.findall(r'40464f582d4f(.*?)28', pack)[0])).decode('utf-8')
                         ress = f"[cُ][bَ][FFA500]{idd}"
@@ -636,6 +661,14 @@ def exchange_loop(client, remote, port):
                                 client.send(bytes.fromhex("12 00 00 00 F9 08 C5 AA 88 E6 26 10 12 20 02 2A EC 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 2A 5B 32 45 43 43 37 31 5D 43 48 45 43 4B 20 42 41 4E 20 49 44 20 41 4E 44 20 52 45 47 49 4F 4E 3A 43 48 45 43 4B 2B 5B 69 64 5D 28 E6 A7 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 81 C0 9A A9 E4 B5 B6 98 1A"))
                                 time.sleep(0.5)
                                 client.send(bytes.fromhex("12000000ef08c5aa88e626101220022ae20108c5aa88e62610c0c5cefb18180222205b3245434337315d47455420524f4d20434f44453a202f524f4d2d434f44452228aa989abd064a310a12434f4445583ae385a4e385a4464f58e298aa10bedd8dae0320c9014212e385a4e385a4434f444558e385a4424f54535202656e6a660a6068747470733a2f2f6c68332e676f6f676c6575736572636f6e74656e742e636f6d2f612f414367386f634a446b484d6f41782d4253794755676e3671474f4d7a755077555673526e675f434a41717941644261797768317634773d7339362d63100118017200800180c09a8189b4e0991a"))
+                                time.sleep(0.5)
+                                client.send(bytes.fromhex("12 00 00 00 F9 08 C5 AA 88 E6 26 10 12 20 02 2A EC 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 2A 5B 32 45 43 43 37 31 5D 43 48 45 43 4B 20 42 41 4E 20 49 44 20 41 4E 44 20 52 45 47 49 4F 4E 3A 43 48 45 43 4B 2B 5B 69 64 5D 28 E6 A7 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 81 C0 9A A9 E4 B5 B6 98 1A"))
+                                time.sleep(0.5)
+                                client.send(bytes.fromhex("12000000f308c5aa88e626101220022ae60108c5aa88e62610c0c5cefb18180222245b3245434337315d414444203130303030204449414d4f4e442046414b453a2f4449414d2893849bbd064a310a12434f4445583ae385a4e385a4464f58e298aa10bedd8dae0320c9014212e385a4e385a4434f444558e385a4424f54535202656e6a660a6068747470733a2f2f6c68332e676f6f676c6575736572636f6e74656e742e636f6d2f612f414367386f634a446b484d6f41782d4253794755676e3671474f4d7a755077555673526e675f434a41717941644261797768317634773d7339362d63100118017200800180c09aa9dcc8ed991a"))
+                                time.sleep(0.5)
+                                client.send(bytes.fromhex("12000000df08c5aa88e626101220022ad20108c5aa88e62610c0c5cefb18180222245b3245434337315d53544f50205350414d20496e7669746174696f6e733a202f2d494e562882849bbd064a1d0a12434f4445583ae385a4e385a4464f58e298aa10bedd8dae0320c9015202656e6a660a6068747470733a2f2f6c68332e676f6f676c6575736572636f6e74656e742e636f6d2f612f414367386f634a446b484d6f41782d4253794755676e3671474f4d7a755077555673526e675f434a41717941644261797768317634773d7339362d63100118017200800180c09ac9dfc6ed991a"))
+                                time.sleep(0.5)
+                                client.send(bytes.fromhex("12000000eb08c5aa88e626101220022ade0108c5aa88e62610c0c5cefb181802221c5b3245434337315d4144442046414b4520474f4c443a202f474f4c44288f849bbd064a310a12434f4445583ae385a4e385a4464f58e298aa10bedd8dae0320c9014212e385a4e385a4434f444558e385a4424f54535202656e6a660a6068747470733a2f2f6c68332e676f6f676c6575736572636f6e74656e742e636f6d2f612f414367386f634a446b484d6f41782d4253794755676e3671474f4d7a755077555673526e675f434a41717941644261797768317634773d7339362d63100118017200800180c09ad1a6c8ed991a"))
 #                                time.sleep(0.5)
 #                                client.send(bytes.fromhex("12 00 00 00 EF 08 9A E5 93 CF 28 10 12 20 02 2A E2 01 08 C5 AA 88 E6 26 10 9A E5 93 CF 28 18 02 22 20 5B 32 45 43 43 37 31 5D 41 44 44 20 31 30 30 20 4C 49 4B 45 53 3A 4C 49 4B 45 53 2B 5B 69 64 5D 28 DB A6 8F BD 06 4A 31 0A 12 43 4F 44 45 58 3A E3 85 A4 E3 85 A4 46 4F 58 E2 98 AA 10 B2 DD 8D AE 03 20 C9 01 42 12 E3 85 A4 E3 85 A4 43 4F 44 45 58 E3 85 A4 42 4F 54 53 52 02 65 6E 6A 66 0A 60 68 74 74 70 73 3A 2F 2F 6C 68 33 2E 67 6F 6F 67 6C 65 75 73 65 72 63 6F 6E 74 65 6E 74 2E 63 6F 6D 2F 61 2F 41 43 67 38 6F 63 4A 44 6B 48 4D 6F 41 78 2D 42 53 79 47 55 67 6E 36 71 47 4F 4D 7A 75 50 77 55 56 73 52 6E 67 5F 43 4A 41 71 79 41 64 42 61 79 77 68 31 76 34 77 3D 73 39 36 2D 63 10 01 18 01 72 00 80 01 80 C0 9A F5 DF A4 B6 98 1A"))
                                 time.sleep(0.5)
@@ -687,11 +720,19 @@ def exchange_loop(client, remote, port):
             	    op.send(bytes.fromhex("0503000001d01fb578313150905babcef51dd24ed75fd0a24b024bd1429646114bc22e604afd35a96fbc48710b2d9cfec4378287ec829e33a78608fd2dd138d4d24a19c00fbfdc9f15c77ff86d638b34de95bd886e3075e82d3f4a3888f9b6943463022c43fb90e229f0eaf8a788f6f766d891d99eb2c37b277144923212810b3c80d1c521790154ed270f5241adc136f2a22816e0bc84fcaf79386b27559de966aa788c184d35bbbfaa03a5f08746f8db0e73b2c91ec4515d61f689a0cad30a7cbd6c325151e879dabc43d506b3240abe41bc0d6b4416c18f68ef4af2d04c381be6bf586f6b25727c0c85c03a579137e4a6c602ef6d833dabdab3eba3a5266e5a4731fbfb1720b60f124cd8fd4fa26cc7a9fb6e0a218d8809f57b204d22fa97520aeb99007c7b71c709e53ecc688c9963e0786909152fa93f06dc93085468dae34e1609f33f7dee228fb058c6efd6846b50ac54db0aebb8f5bc2f6751f9e2886dbab41cbaf5a1d8cd88e6c13a2a2a56b613a2d32179dc3f781493a5027322ac0cb1a2d3c79d49fb12ed26230e1561df43d315a27be17b5debdba757803305252b5443f3d77cd319dde9c49a72c636d93d02bdd9597168f378aa6e41d0fd545abf8bc0883f3dac11ea27166683c7111a0f329bf6b6a5"))
 ####################################
                 elif code_verified and  b"/FOX-FAKE" in dataS:
-                    add_fake = True
+                    i = re.split('/FOX-FAKE', str(dataS))[1]
+                    if '***' in i:
+                        i = i.replace('***', '106')
+                    id = str(i).split('(\\x')[0]
+                    id = Encrypt_ID(id)
+                    fake_friend(op, id)
+#                elif code_verified and  b"/FOX-FAKE" in dataS:
+#                    add_fake = True
+#                elif code_verified and  b"@FOX-FAKE" in dataS:
+#                    add_fake = False
 ####################################
                 elif code_verified and  b"/ROM-SPY" in dataS:
                     op.send(b"\x0e\x15\x00\x00\x00P\xd6\xd5\x19\x00+\xdc\xc6M\xe8\xa4,\x1a\xae\xdf\\:\xaa\xcf|\xe6\x94\xef\xbf\xc1\xf1\x1f\x02h\t\xb6%\xe7\x93aM\xd1?\xfa8\xee\xccUO\xf3 \xa6\x1b\x8a\xc6\x96\x99\xa8\xeb^\xda\xb7;9\xe9\xd9\x10zP\xd5\xe0\x83\xa2\xbc\x8c\x01\xfb\xadd\xdb\xcek\x85\x81\xcdP")
-####################################
 ####################################
                 elif code_verified and   b"/INV" in dataS and '1200' in dataS.hex()[0:4]:
                         spamm = True
@@ -839,10 +880,10 @@ def exchange_loop(client, remote, port):
                             raks = dor.replace('*', id)
                             clientC.send(bytes.fromhex(raks))
 ####################################
-                elif code_verified and  b"@SPAM_BACK" in dataS:
+                elif code_verified and  b"/BACK-SPAM" in dataS:
                     back_spam= True
                     threading.Thread(target=fox_spam_back , args=(data_join,op)).start()
-                elif code_verified and  b"@NORMAL_BACK" in dataS:
+                elif code_verified and  b"/BACK-NORMAL" in dataS:
                     back_normal = True
                     threading.Thread(target=fox_back, args=(data_join, op)).start()
 ####################################
