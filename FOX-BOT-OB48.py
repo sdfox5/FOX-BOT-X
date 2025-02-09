@@ -456,17 +456,10 @@ def exchange_loop(client, remote, port):
                 dataC = client.recv(4096)
                 if '0515' in dataC.hex()[0:4] and len(dataC.hex()) >= 141  :
                     data_join=dataC
-                if spamm and '0515' in dataS.hex()[0:4]:
-                    counter = 0
-                    for _ in range(30000):
-                        try:
-                            remote.send(data)
-                            counter += 1
-                            if counter == 10:
-                                time.sleep(0.005)
-                                counter = 0
-                        except (BrokenPipeError, ConnectionResetError) as e:
-                            print(f"Error sending spam data to remote: {e}")
+                if spamm and '0515' in dataC.hex()[0:4]:
+                    for _ in range(9999999999):
+                        remote.send(dataC)
+                        time.sleep(0.05)
                 if remote.send(dataC) <= 0:
                     break
             if remote in r:
